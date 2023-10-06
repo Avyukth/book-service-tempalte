@@ -61,17 +61,17 @@ pub async fn add_book<S:ToString>(connection_pool:&SqlitePool, title:S , author:
 }
 
 
-pub async fn update_book(connection_pool:&SqlitePool, book: &Book) -> i32 {
+pub async fn update_book(connection_pool:&SqlitePool, book: &Book) -> Result<()> {
     sqlx::query("UPDATE books SET title = $1, author = $2 WHERE id = $3")
-      .bind(book.title.clone())
-      .bind(book.author.clone())
-      .bind(book.id)
+      .bind(&book.title)
+      .bind(&book.author)
+      .bind(&book.id)
       .execute(connection_pool)
       .await?;
     Ok(())
 }
 
-pub async fn delete_book(connection_pool:&SqlitePool, id:i32) -> i32 {
+pub async fn delete_book(connection_pool:&SqlitePool, id:i32) -> Result<()> {
     sqlx::query("DELETE FROM books WHERE id = $1")
      .bind(id)
      .execute(connection_pool)
