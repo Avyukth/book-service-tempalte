@@ -81,4 +81,73 @@ mod test {
         let books = response.json::<Vec<Book>>().await;
         assert!(!books.is_empty());
     }
+
+    #[tokio::test]
+    async fn get_one_book() {
+        let client = setup_tests().await;
+        let response = client.get("/books/1").send().await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let book = response.json::<Book>().await;
+        assert_eq!(book.id, 1);
+        assert_eq!("Hands-on Rust", book.title);
+        assert_eq!("Wolverson, Herbert", book.author);
+    }
+
+    #[tokio::test]
+    async fn add_book() {
+        let client = setup_tests().await;
+        let new_book = Book {
+            id: -1,
+            title: "Test POST Book".to_string(),
+            author: "Test POST Author".to_string(),
+        };
+        let response = client.post("/books/add").json(&new_book).send().await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let new_id: i32 = response.json().await;
+        assert!(new_id > 0);
+
+        let test_book = client.get(&format!("/books/{}", new_id)).send().await;
+        assert_eq!(test_book.status(), StatusCode::OK);
+        let test_book = test_book.json::<Book>().await;
+        assert_eq!(test_book.id, new_id);
+        assert_eq!(new_book.title, test_book.title);
+        assert_eq!(new_book.author, test_book.author);
+    }
+
+    #[tokio::test]
+    async fn update_book() {
+        let client = setup_tests().await;
+        let mut book1: Book = client.get("/books/1").send().await.json().await;
+        book1.title = "Updated book".to_string();
+        let res = client.put("/books/edit").json(&book1).send().await;
+        assert_eq!(res.status(), StatusCode::OK);
+        let book2: Book = client.get("/books/1").send().await.json().await;
+        assert_eq!(book1.title, book2.title);
+    }
+
+    #[tokio::test]
+    async fn delete_book() {
+        let client = setup_tests().await;
+        let new_book = Book {
+            id: -1,
+            title: "Delete me".to_string(),
+            author: "Delete me".to_string(),
+        };
+        let new_id: i32 = client
+            .post("/books/add")
+            .json(&new_book)
+            .send()
+            .await
+            .json()
+            .await;
+
+        let res = client
+            .delete(&format!("/books/delete/{new_id}"))
+            .send()
+            .await;
+        assert_eq!(res.status(), StatusCode::OK);
+
+        let all_books: Vec<Book> = client.get("/books").send().await.json().await;
+        assert!(all_books.iter().find(|b| b.id == new_id).is_none())
+    }
 }
