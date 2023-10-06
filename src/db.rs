@@ -16,8 +16,8 @@ struct BookCache {
 }
 
 pub async fn init_db() -> Result<SqlitePool> {
-    let database_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be present in environment variables");
+    let database_url = std::env::var("DATABASE_URL")?;
+    // .expect("DATABASE_URL must be present in environment variables");
     let connection_pool = SqlitePool::connect(&database_url).await?;
     sqlx::migrate!().run(&connection_pool).await?;
     Ok(connection_pool)
