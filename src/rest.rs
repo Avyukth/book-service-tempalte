@@ -1,4 +1,4 @@
-use crate::db::{add_book, delete_book, get_all_books, get_book_by_id, update_book};
+use crate::db::Book;
 use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post, put};
@@ -7,17 +7,15 @@ use sqlx::SqlitePool;
 
 pub fn book_service() -> Router {
     Router::new()
-        .route("/", get(get_all_books))
+        .route("/", get(get_books))
         .route("/:id", get(get_book))
         .route("/add", post(add_book))
         .route("/edit", put(update_book))
         .route("/delete/:id", delete(delete_book))
 }
 
-async fn get_all_books(
-    Extension(pool): Extension<SqlitePool>,
-) -> Result<Json<Vec<Book>>, StatusCode> {
-    match db::get_all_books(&pool).await {
+async fn get_books(Extension(pool): Extension<SqlitePool>) -> Result<Json<Vec<Book>>, StatusCode> {
+    match crate::db::get_all_books(&pool).await {
         Ok(books) => Ok(Json(books)),
         Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
     }
@@ -25,9 +23,9 @@ async fn get_all_books(
 
 async fn get_book(
     Extension(pool): Extension<SqlitePool>,
-    path(id): Path<i32>,
+    Path(id): Path<i32>,
 ) -> Result<Json<Book>, StatusCode> {
-    match db::get_book_by_id(&pool, id).await {
+    match crate::db::get_book_by_id(&pool, id).await {
         Ok(book) => Ok(Json(book)),
         Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
     }
@@ -35,9 +33,9 @@ async fn get_book(
 
 async fn add_book(
     Extension(pool): Extension<SqlitePool>,
-    extract::JSON(book): Json<Book>,
+    extract::Json(book): Json<Book>,
 ) -> Result<Json<i32>, StatusCode> {
-    match db::add_book(&pool, &book.title, &book.author).await {
+    match crate::db::add_book(&pool, &book.title, &book.author).await {
         Ok(id) => Ok(Json(id)),
         Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
     }
@@ -45,11 +43,11 @@ async fn add_book(
 
 async fn update_book(
     Extension(pool): Extension<SqlitePool>,
-    extract::JSON(book): Json<Book>,
+    extract::Json(book): extract::Json<Book>,
 ) -> StatusCode {
-    match db::update_book(&pool, &book).await {
-        Ok(_) => Ok(StatusCode::OK),
-        Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+    match crate::db::update_book(&pool, &book).await {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::SERVICE_UNAVAILABLE,
     }
 }
 
@@ -57,9 +55,9 @@ async fn delete_book(
     Extension(pool): Extension<SqlitePool>,
     extract::Path(id): Path<i32>,
 ) -> StatusCode {
-    match db::delete_book(&pool, id).await {
-        Ok(_) => Ok(StatusCode::OK),
-        Err(_) => Err(StatusCode::SERVICE_UNAVAILABLE),
+    match crate::db::delete_book(&pool, id).await {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::SERVICE_UNAVAILABLE,
     }
 }
 
@@ -70,17 +68,17 @@ mod test {
 
     async fn setup_tests() -> TestClient {
         dotenv::dotenv().ok();
-        let connection_pool = init_db().await.unwrap();
+        let connection_pool = crate::db::init_db().await.unwrap();
         let app = crate::router(connection_pool);
         TestClient::new(app)
     }
 
     #[tokio::test]
-    async fn get_all_books() {
+    async fn get_books() {
         let client = setup_tests().await;
-        let response = client.get("/books").send().await.unwrap();
+        let response = client.get("/books").send().await;
         assert_eq!(response.status(), StatusCode::OK);
-        let books = response.json::<Vec<Book>>().await.unwrap();
+        let books = response.json::<Vec<Book>>().await;
         assert!(!books.is_empty());
     }
 }
