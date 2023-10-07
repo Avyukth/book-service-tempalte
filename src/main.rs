@@ -1,23 +1,29 @@
 mod db;
+mod init_trace;
 mod rest;
 use crate::db::init_db;
-use std::env;
-use std::net::{IpAddr, SocketAddr};
-use tokio::signal;
-
 use anyhow::{Ok, Result};
 use axum::{Extension, Router};
 use sqlx::SqlitePool;
+use std::env;
+use std::net::{IpAddr, SocketAddr};
+use tokio::signal;
+use tower_http::trace::{self, TraceLayer};
 
 fn router(pool: SqlitePool) -> Router {
     Router::new()
         .nest_service("/books", rest::book_service())
         // .nest_service("/")
         .layer(Extension(pool))
+        .layer(
+            TraceLayer::new_for_http()
+                .on_response(trace::DefaultOnResponse::new().level(tracing::Level::INFO)),
+        )
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    init_trace::init_tracing();
     dotenv::dotenv().ok();
     let connection_pool = init_db().await?;
 
