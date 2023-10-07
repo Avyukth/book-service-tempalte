@@ -17,8 +17,8 @@ fn router(pool: SqlitePool) -> Router {
         .layer(Extension(pool))
         .layer(
             TraceLayer::new_for_http()
-                .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::DEBUG))
-                .on_response(trace::DefaultOnResponse::new().level(tracing::Level::DEBUG)),
+                .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::INFO))
+                .on_response(trace::DefaultOnResponse::new().level(tracing::Level::INFO)),
         )
 }
 
