@@ -1,6 +1,6 @@
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::prelude::*;
-// use tracing_subscriber::;
+use tracing_subscriber::EnvFilter;
 
 pub fn init_tracing() {
     // File appender for logging to files.
@@ -20,14 +20,14 @@ pub fn init_tracing() {
         .with_span_events(FmtSpan::ENTER | FmtSpan::CLOSE)
         .with_line_number(true)
         .with_thread_ids(true)
-        .with_target(false)
+        .with_target(true)
         .with_writer(non_blocking);
 
     // Combine the layers with an environment filter.
     let subscriber = tracing_subscriber::Registry::default()
-        // .with(EnvFilter::from_default_env())  // Use TRACE_LEVEL environment variable for dynamic log level configuration.
-        .with(stdout_layer)
-        .with(file_layer);
+        .with(EnvFilter::from_default_env())
+        .with(file_layer)
+        .with(stdout_layer);
 
     tracing::subscriber::set_global_default(subscriber)
         .expect("Setting initial tracing subscriber failed.");

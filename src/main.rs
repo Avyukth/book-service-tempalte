@@ -24,8 +24,9 @@ fn router(pool: SqlitePool) -> Router {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    init_trace::init_tracing();
     dotenv::dotenv().ok();
+    init_trace::init_tracing();
+
     let connection_pool = init_db().await?;
 
     let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
