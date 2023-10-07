@@ -5,7 +5,7 @@ use tracing_subscriber::EnvFilter;
 pub fn init_tracing() {
     // File appender for logging to files.
     let file_appender = tracing_appender::rolling::minutely("./logs", "prefix.log");
-    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    // let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
     // Configuration for logging to stdout in a pretty format.
     let stdout_layer = tracing_subscriber::fmt::layer()
@@ -21,7 +21,8 @@ pub fn init_tracing() {
         .with_line_number(true)
         .with_thread_ids(true)
         .with_target(true)
-        .with_writer(non_blocking);
+        // .with_writer(non_blocking);
+        .with_writer(file_appender);
 
     // Combine the layers with an environment filter.
     let subscriber = tracing_subscriber::Registry::default()
