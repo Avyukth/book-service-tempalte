@@ -1,0 +1,8 @@
+services:
+  server:
+    build:
+      context: .
+      target: final
+    container_name: book-service
+    ports:
+      - 8090:8090
