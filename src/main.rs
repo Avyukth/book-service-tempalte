@@ -1,14 +1,17 @@
 mod db;
 mod init_trace;
+mod otl_init;
 mod rest;
 use crate::db::init_db;
 use anyhow::{Ok, Result};
 use axum::{Extension, Router};
+use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
 use sqlx::SqlitePool;
 use std::env;
 use std::net::{IpAddr, SocketAddr};
 use tokio::signal;
 use tower_http::trace::{self, TraceLayer};
+
 
 fn router(pool: SqlitePool) -> Router {
     Router::new()
@@ -20,12 +23,18 @@ fn router(pool: SqlitePool) -> Router {
                 .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::INFO))
                 .on_response(trace::DefaultOnResponse::new().level(tracing::Level::INFO)),
         )
+        // Add OpenTelemetry middleware
+        .layer(OtelAxumLayer::default())
+        .layer(OtelInResponseLayer::default())
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
     init_trace::init_tracing();
+    // let _ = otl_init::init_tracer();
+    let _ = init_tracing_opentelemetry::tracing_subscriber_ext::init_subscribers();
+
 
     let connection_pool = init_db().await?;
 
@@ -49,6 +58,7 @@ async fn main() -> Result<()> {
         .await?;
 
     println!("Server shutting down");
+    opentelemetry::global::shutdown_tracer_provider();
 
     Ok(())
 }
@@ -78,3 +88,4 @@ async fn shutdown_signal() {
 
     println!("signal received, starting graceful shutdown");
 }
+

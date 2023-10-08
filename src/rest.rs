@@ -2,12 +2,20 @@ use crate::db::Book;
 use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post, put};
-use axum::{extract, Extension, Json, Router};
+use axum::{extract, Extension, Json, Router,  response::IntoResponse};
 use sqlx::SqlitePool;
+use tracing_opentelemetry_instrumentation_sdk::find_current_trace_id;
+use serde_json::json;
+
 
 pub fn book_service() -> Router {
     Router::new()
-        .route("/", get(get_books))
+            .route(
+            "/proxy/:service/*path",
+            get(proxy_handler).post(proxy_handler),
+        )
+        .route("/", get(index))
+        .route("/all", get(get_books))
         .route("/:id", get(get_book))
         .route("/add", post(add_book))
         .route("/edit", put(update_book))
@@ -60,6 +68,30 @@ async fn delete_book(
         Err(_) => StatusCode::SERVICE_UNAVAILABLE,
     }
 }
+
+
+
+
+
+
+#[tracing::instrument]
+async fn index() -> impl IntoResponse {
+    let trace_id = find_current_trace_id();
+    dbg!(&trace_id);
+    //std::thread::sleep(std::time::Duration::from_secs(1));
+    axum::Json(json!({ "my_trace_id": trace_id }))
+}
+
+async fn proxy_handler(Path((service, path)): Path<(String, String)>) -> impl IntoResponse {
+    // Overwrite the otel.name of the span
+    tracing::Span::current().record("otel.name", format!("proxy {service}"));
+    let trace_id = find_current_trace_id();
+    axum::Json(
+        json!({ "my_trace_id": trace_id, "fake_proxy": { "service": service, "path": path } }),
+    )
+}
+
+
 
 #[cfg(test)]
 mod test {

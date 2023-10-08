@@ -1,8 +1,13 @@
+version: '3.9'
+
 services:
   server:
     build:
       context: .
+      dockerfile: Dockerfile
       target: final
     container_name: book-service
     ports:
-      - 8090:8090
+      - "8090:8090"
+    env_file:
+      - .env

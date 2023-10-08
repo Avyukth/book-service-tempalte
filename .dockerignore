@@ -1,0 +1,9 @@
+.trunk/
+/.trunk
+/logs
+# comment
+*/temp*
+*/*/temp*
+temp?
+/target
+/target/
