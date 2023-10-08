@@ -1,8 +1,13 @@
+use std::fs;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
 pub fn init_tracing() {
+    if let Err(e) = fs::create_dir_all("./logs") {
+        eprintln!("Failed to create ./logs directory: {:?}", e);
+        return;
+    }
     // File appender for logging to files.
     let file_appender = tracing_appender::rolling::minutely("./logs", "prefix.log");
     // let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
