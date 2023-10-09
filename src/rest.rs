@@ -2,15 +2,14 @@ use crate::db::Book;
 use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post, put};
-use axum::{extract, Extension, Json, Router,  response::IntoResponse};
+use axum::{extract, response::IntoResponse, Extension, Json, Router};
+use serde_json::json;
 use sqlx::SqlitePool;
 use tracing_opentelemetry_instrumentation_sdk::find_current_trace_id;
-use serde_json::json;
-
 
 pub fn book_service() -> Router {
     Router::new()
-            .route(
+        .route(
             "/proxy/:service/*path",
             get(proxy_handler).post(proxy_handler),
         )
@@ -69,11 +68,6 @@ async fn delete_book(
     }
 }
 
-
-
-
-
-
 #[tracing::instrument]
 async fn index() -> impl IntoResponse {
     let trace_id = find_current_trace_id();
@@ -90,8 +84,6 @@ async fn proxy_handler(Path((service, path)): Path<(String, String)>) -> impl In
         json!({ "my_trace_id": trace_id, "fake_proxy": { "service": service, "path": path } }),
     )
 }
-
-
 
 #[cfg(test)]
 mod test {

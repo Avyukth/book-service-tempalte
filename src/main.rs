@@ -12,7 +12,6 @@ use std::net::{IpAddr, SocketAddr};
 use tokio::signal;
 use tower_http::trace::{self, TraceLayer};
 
-
 fn router(pool: SqlitePool) -> Router {
     Router::new()
         .nest_service("/books", rest::book_service())
@@ -34,7 +33,6 @@ async fn main() -> Result<()> {
     init_trace::init_tracing();
     // let _ = otl_init::init_tracer();
     let _ = init_tracing_opentelemetry::tracing_subscriber_ext::init_subscribers();
-
 
     let connection_pool = init_db().await?;
 
@@ -88,4 +86,3 @@ async fn shutdown_signal() {
 
     println!("signal received, starting graceful shutdown");
 }
-
